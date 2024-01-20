@@ -14,6 +14,15 @@ var discoveryCmd = &cobra.Command{
 	Short:  "Send the discovery message to MQTT",
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Publish the discovery message
+		c, err := mqtt.New(rootCmdOpts.Broker)
+		if err != nil {
+			fmt.Printf("Error creating MQTT client; %s\n", err)
+			os.Exit(1)
+			return
+		}
+
+		// Setup the discovery topic/content
 		topic := "homeassistant/camera/DraftyKnottyWasp/DraftyKnottyWasp_camera_Image/config"
 		contents := `{
 			"topic":"valetudo/DraftyKnottyWasp/Camera/image-data-hass",
@@ -26,17 +35,10 @@ var discoveryCmd = &cobra.Command{
 			"device":{"manufacturer":"Dreame","model":"L10S Ultra","name":"Valetudo L10S Ultra DraftyKnottyWasp","identifiers":["DraftyKnottyWasp"],"sw_version":"Valetudo 2023.12.0","configuration_url":"http://valetudo-draftyknottywasp.local"}
 		}`
 
-		c, err := mqtt.New(rootCmdOpts.Broker)
-		if err != nil {
-			fmt.Printf("Error creating MQTT client; %s\n", err)
-			os.Exit(1)
-			return
-		}
-
 		token := c.Publish(topic, 0, true, contents)
 		token.Wait()
 		if err := token.Error(); err != nil {
-			fmt.Printf("Error publishing image %s\n", err)
+			fmt.Printf("Error publishing discovery; %s\n", err)
 			os.Exit(1)
 			return
 		}
