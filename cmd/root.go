@@ -9,8 +9,8 @@ import (
 // Represents the base command when called without any subcommands
 var rootCmdOpts = rootCommandOptions{}
 var rootCmd = &cobra.Command{
-	Use:   "mqtt-snapshot",
-	Short: "The mqtt-snapshot tool",
+	Use:   "vacuumqtt-snapshot",
+	Short: "The vacuumqtt-snapshot tool",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

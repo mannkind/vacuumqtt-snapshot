@@ -1,6 +1,6 @@
 package main
 
-import "github.com/mannkind/mqtt-snapshot/cmd"
+import "github.com/mannkind/vacuumqtt-snapshot/cmd"
 
 func main() {
 	cmd.Execute()

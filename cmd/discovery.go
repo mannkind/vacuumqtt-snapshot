@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mannkind/mqtt-snapshot/mqtt"
+	"github.com/mannkind/vacuumqtt-snapshot/mqtt"
 	"github.com/spf13/cobra"
 )
 

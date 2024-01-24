@@ -1,4 +1,4 @@
-module github.com/mannkind/mqtt-snapshot
+module github.com/mannkind/vacuumqtt-snapshot
 
 go 1.20
 
