@@ -1,7 +1,9 @@
 package cmd
 
 type rootCommandOptions struct {
-	Broker string
+	Broker   string
+	Username string
+	Password string
 }
 
 type sendLatestCommandOptions struct {

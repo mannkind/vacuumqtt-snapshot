@@ -15,7 +15,7 @@ var discoveryCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Publish the discovery message
-		c, err := mqtt.New(rootCmdOpts.Broker)
+		c, err := mqtt.New(rootCmdOpts.Broker, rootCmdOpts.Username, rootCmdOpts.Password)
 		if err != nil {
 			fmt.Printf("Error creating MQTT client; %s\n", err)
 			os.Exit(1)

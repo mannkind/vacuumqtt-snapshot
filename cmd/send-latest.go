@@ -5,8 +5,8 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/mannkind/vacuumqtt-snapshot/mqtt"
@@ -20,13 +20,13 @@ var sendLatestCmd = &cobra.Command{
 	Short: "Send the latest snapshot to MQTT",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Publish the image content
-		c, err := mqtt.New(rootCmdOpts.Broker)
+		c, err := mqtt.New(rootCmdOpts.Broker, rootCmdOpts.Username, rootCmdOpts.Password)
 		if err != nil {
 			fmt.Printf("Error creating initial MQTT client; %s\n", err)
 
 			connect := time.NewTicker(7 * time.Second)
 			for range connect.C {
-				c, err = mqtt.New(rootCmdOpts.Broker)
+				c, err = mqtt.New(rootCmdOpts.Broker, rootCmdOpts.Username, rootCmdOpts.Password)
 
 				if err != nil {
 					fmt.Printf("Error creating MQTT client; %s\n", err)
@@ -37,31 +37,41 @@ var sendLatestCmd = &cobra.Command{
 			}
 		}
 
+		lastImage := ""
 		ticker := time.NewTicker(7 * time.Second)
 		for range ticker.C {
 			// Fetch the latest image content
-			contents, err := latestImageContent(sendLatestOpts.Directory, sendLatestOpts.Extension)
+			file, contents, err := latestImageContent(sendLatestOpts.Directory, sendLatestOpts.Extension, lastImage)
 			if err != nil {
 				fmt.Printf("Error fetching latest image content; %s\n", err)
 				continue
 			}
 
+			// Don't publish duplicate images
+			if lastImage == file {
+				fmt.Print("Duplicate last known iamge\n")
+				continue
+			}
+
+			// Publish the image content
 			token := c.Publish(sendLatestOpts.Topic, 0, true, contents)
 			token.Wait()
 			if err := token.Error(); err != nil {
 				fmt.Printf("Error publishing image; %s\n", err)
 				continue
 			}
+
+			lastImage = file
 		}
 	},
 }
 
-func latestImageContent(directory string, ext string) (string, error) {
+func latestImageContent(directory string, ext string, last string) (string, string, error) {
 	// Read all files in the directory
 	// Filter out only the files with the correct extension
 	files, err := readDir(directory, ext)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Sort the files by modification time, descending
@@ -73,11 +83,11 @@ func latestImageContent(directory string, ext string) (string, error) {
 	file := fmt.Sprintf("%s/%s", directory, files[0].Name())
 	contents, err := readFile(file)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Return the contents
-	return contents, nil
+	return file, contents, nil
 }
 
 func readDir(directory string, ext string) ([]fs.FileInfo, error) {
@@ -93,7 +103,11 @@ func readDir(directory string, ext string) ([]fs.FileInfo, error) {
 			return nil, err
 		}
 
-		if !strings.HasSuffix(file.Name(), ext) {
+		if filepath.Ext(file.Name()) != ext {
+			continue
+		}
+
+		if file.Size() == 0 {
 			continue
 		}
 
