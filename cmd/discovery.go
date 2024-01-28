@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/mannkind/vacuumqtt-snapshot/logging"
 	"github.com/mannkind/vacuumqtt-snapshot/mqtt"
 	"github.com/spf13/cobra"
 )
@@ -14,10 +14,12 @@ var discoveryCmd = &cobra.Command{
 	Short:  "Send the discovery message to MQTT",
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		log := logging.New(rootCmdOpts.Verbosity)
+
 		// Publish the discovery message
 		c, err := mqtt.New(rootCmdOpts.Broker, rootCmdOpts.Username, rootCmdOpts.Password)
 		if err != nil {
-			fmt.Printf("Error creating MQTT client; %s\n", err)
+			log.Error(err, "Error creating initial MQTT client", "broker", rootCmdOpts.Broker, "username", rootCmdOpts.Username, "password", "********")
 			os.Exit(1)
 			return
 		}
@@ -38,7 +40,7 @@ var discoveryCmd = &cobra.Command{
 		token := c.Publish(topic, 0, true, contents)
 		token.Wait()
 		if err := token.Error(); err != nil {
-			fmt.Printf("Error publishing discovery; %s\n", err)
+			log.Error(err, "Error publishing discovery", "topic", topic)
 			os.Exit(1)
 			return
 		}

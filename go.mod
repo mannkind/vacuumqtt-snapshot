@@ -4,6 +4,8 @@ go 1.20
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3
+	github.com/go-logr/logr v1.4.1
+	github.com/go-logr/stdr v1.2.2
 	github.com/spf13/cobra v1.8.0
 )
 

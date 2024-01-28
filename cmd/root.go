@@ -26,4 +26,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&rootCmdOpts.Broker, "broker", "mqtt.lan:1883", "The host:port of the broker")
 	rootCmd.PersistentFlags().StringVar(&rootCmdOpts.Username, "username", "", "The username for the broker")
 	rootCmd.PersistentFlags().StringVar(&rootCmdOpts.Password, "password", "", "The password for the broker")
+
+	rootCmd.PersistentFlags().IntVar(&rootCmdOpts.Verbosity, "verbosity", 1, "The verbosity for logging")
+
 }

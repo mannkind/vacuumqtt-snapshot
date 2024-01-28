@@ -9,6 +9,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/mannkind/vacuumqtt-snapshot/logging"
 	"github.com/mannkind/vacuumqtt-snapshot/mqtt"
 	"github.com/spf13/cobra"
 )
@@ -19,21 +20,24 @@ var sendLatestCmd = &cobra.Command{
 	Use:   "send-latest",
 	Short: "Send the latest snapshot to MQTT",
 	Run: func(cmd *cobra.Command, args []string) {
+		log := logging.New(rootCmdOpts.Verbosity)
+
 		// Publish the image content
 		c, err := mqtt.New(rootCmdOpts.Broker, rootCmdOpts.Username, rootCmdOpts.Password)
 		if err != nil {
-			fmt.Printf("Error creating initial MQTT client; %s\n", err)
+			log.Error(err, "Error creating initial MQTT client", "broker", rootCmdOpts.Broker, "username", rootCmdOpts.Username, "password", "********")
 
 			connect := time.NewTicker(7 * time.Second)
 			for range connect.C {
 				c, err = mqtt.New(rootCmdOpts.Broker, rootCmdOpts.Username, rootCmdOpts.Password)
 
 				if err != nil {
-					fmt.Printf("Error creating MQTT client; %s\n", err)
+					log.Error(err, "Error creating MQTT client", "broker", rootCmdOpts.Broker, "username", rootCmdOpts.Username, "password", "********")
 					continue
 				}
 
 				connect.Stop()
+				break
 			}
 		}
 
@@ -43,13 +47,13 @@ var sendLatestCmd = &cobra.Command{
 			// Fetch the latest image content
 			file, contents, err := latestImageContent(sendLatestOpts.Directory, sendLatestOpts.Extension, lastImage)
 			if err != nil {
-				fmt.Printf("Error fetching latest image content; %s\n", err)
+				log.Error(err, "Error fetching latest image content")
 				continue
 			}
 
 			// Don't publish duplicate images
 			if lastImage == file {
-				fmt.Print("Duplicate last known iamge\n")
+				log.Info("Won't publish duplicate image", "file", file)
 				continue
 			}
 
@@ -57,7 +61,7 @@ var sendLatestCmd = &cobra.Command{
 			token := c.Publish(sendLatestOpts.Topic, 0, true, contents)
 			token.Wait()
 			if err := token.Error(); err != nil {
-				fmt.Printf("Error publishing image; %s\n", err)
+				log.Error(err, "Error publishing image", "topic", sendLatestOpts.Topic, "file", file)
 				continue
 			}
 
@@ -112,10 +116,6 @@ func readDir(directory string, ext string) ([]fs.FileInfo, error) {
 		}
 
 		files = append(files, file)
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	if len(files) == 0 {
